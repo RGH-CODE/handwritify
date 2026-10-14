@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Handwritify — book pages to handwritten notes</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="setupScreen" class="setup-screen" role="dialog" aria-modal="true" aria-labelledby="setupTitle">
+  <section class="setup-card">
+    <p class="eyebrow">First-time setup</p>
+    <h1 id="setupTitle">One component to install</h1>
+    <p class="setup-copy">Handwritify needs Tesseract OCR to read text from scanned pages and photos.</p>
+    <p id="setupStatus" class="setup-status" role="status" aria-live="polite">Checking this computer…</p>
+    <p id="setupInstructions" class="setup-instructions"></p>
+    <a id="setupDownload" class="primary-btn setup-download hidden" href="#" target="_blank" rel="noopener noreferrer">Download Tesseract</a>
+    <button id="checkSetupBtn" type="button" class="primary-btn setup-check" disabled>Check again</button>
+    <button id="continueSetupBtn" type="button" class="link-btn hidden">Continue to sign in</button>
+    <details class="optional-setup">
+      <summary>Optional: PowerPoint image-only slides</summary>
+      <p>LibreOffice can help read slides that contain only scanned images. It is not needed for PDFs, photos, or normal text-based slides.</p>
+      <a href="https://www.libreoffice.org/download/" target="_blank" rel="noopener noreferrer">Download LibreOffice</a>
+    </details>
+  </section>
+</div>
+
+<div id="authScreen" class="auth-screen hidden" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+  <div class="auth-card">
+    <div class="auth-animation" aria-hidden="true">
+      <span class="pen"></span>
+      <span class="ink-stroke stroke-one"></span>
+      <span class="ink-stroke stroke-two"></span>
+      <span class="ink-stroke stroke-three"></span>
+      <span class="ink-dot dot-one"></span>
+      <span class="ink-dot dot-two"></span>
+      <span class="ink-dot dot-three"></span>
+    </div>
+    <p class="eyebrow">Welcome back</p>
+    <h1 id="authTitle">Handwritify</h1>
+    <p class="auth-copy">Turn your books, slides, and scanned pages into handwritten notes.</p>
+
+    <form id="loginForm" novalidate>
+      <label for="username">Username</label>
+      <input id="username" name="username" type="text" autocomplete="username" required />
+
+      <label for="password">Password</label>
+      <div class="password-wrap">
+        <input id="password" name="password" type="password" autocomplete="current-password" required />
+        <button id="togglePassword" type="button" aria-label="Show password">Show</button>
+      </div>
+
+      <p id="loginError" class="login-error" role="alert" aria-live="assertive"></p>
+      <button id="loginButton" class="primary-btn login-button" type="submit">Open Handwritify</button>
+    </form>
+    <p class="auth-note">Your files stay on this computer.</p>
+  </div>
+</div>
+
+<header id="appHeader" class="hidden">
+  <h1>Handwritify</h1>
+  <p>Turn book pages, slides or photos into handwritten-style notes. Everything runs on this computer.</p>
+</header>
+
+<main id="mainApp" class="hidden">
+  <!-- 1 ---------------------------------------------------------------- -->
+  <section class="card" id="upload-section">
+    <h2><span class="step">1</span> Add your files</h2>
+    <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Choose files">
+      <p><strong>Drop files here</strong> or click to choose</p>
+      <p class="hint">PDF, PPTX, JPG or PNG. Files are combined in the order listed below.</p>
+      <input type="file" id="fileInput" multiple accept=".pdf,.pptx,.jpg,.jpeg,.png" hidden />
+    </div>
+    <ul id="fileList"></ul>
+  </section>
+
+  <!-- 2 ---------------------------------------------------------------- -->
+  <section class="card" id="look-section">
+    <h2><span class="step">2</span> Choose a look</h2>
+    <div class="options-grid">
+      <label>Handwriting
+        <select id="styleSelect"></select>
+      </label>
+      <label>Paper
+        <select id="paperSelect"></select>
+      </label>
+      <label>Paper color
+        <input type="color" id="paperColor" value="#ffffff" />
+      </label>
+      <label>Ink color
+        <input type="color" id="inkColor" value="#1a2b6d" />
+      </label>
+      <label>Pictures found in your pages
+        <select id="imageMode">
+          <option value="sketch" selected>Redraw as pencil sketch</option>
+          <option value="ink">Redraw as ink line drawing</option>
+          <option value="grayscale">Black &amp; white photo</option>
+          <option value="original">Keep original</option>
+          <option value="skip">Leave pictures out</option>
+        </select>
+      </label>
+    </div>
+
+    <details class="advanced">
+      <summary>Spacing &amp; layout</summary>
+
+      <fieldset>
+        <legend>Text</legend>
+        <div class="options-grid">
+          <label>Text size <output id="fontSizeVal"></output>
+            <input type="range" id="fontSize" min="24" max="90" step="1" value="42" data-unit=" px" />
+          </label>
+          <label>Line spacing <output id="lineSpacingVal"></output>
+            <input type="range" id="lineSpacing" min="1" max="2.6" step="0.05" value="1.5" data-unit="×" />
+          </label>
+          <label>Word spacing <output id="wordSpacingVal"></output>
+            <input type="range" id="wordSpacing" min="0.6" max="2.5" step="0.05" value="1" data-unit="×" />
+          </label>
+          <label>Letter spacing <output id="letterSpacingVal"></output>
+            <input type="range" id="letterSpacing" min="-2" max="8" step="0.5" value="0" data-unit=" px" />
+          </label>
+          <label>Gap between paragraphs <output id="paragraphGapVal"></output>
+            <input type="range" id="paragraphGap" min="0" max="3" step="0.5" value="0.5" data-unit=" lines" />
+          </label>
+          <label>First-line indent <output id="indentVal"></output>
+            <input type="range" id="indent" min="0" max="30" step="1" value="0" data-unit=" mm" />
+          </label>
+          <label>Alignment
+            <select id="alignSelect">
+              <option value="left" selected>Left</option>
+              <option value="justify">Justified</option>
+              <option value="center">Centered</option>
+              <option value="right">Right</option>
+            </select>
+          </label>
+          <label>Heading size <output id="headingScaleVal"></output>
+            <input type="range" id="headingScale" min="1" max="2.2" step="0.1" value="1.4" data-unit="×" />
+          </label>
+          <label>Natural variation <output id="jitterVal"></output>
+            <input type="range" id="jitter" min="0" max="2" step="0.1" value="1" data-unit="" />
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Page</legend>
+        <div class="options-grid">
+          <label>Page size
+            <select id="pageSize">
+              <option value="a4" selected>A4</option>
+              <option value="a5">A5</option>
+              <option value="letter">US Letter</option>
+              <option value="canvas">Boundless Canvas (digital board)</option>
+            </select>
+          </label>
+          <label>Top margin (mm)
+            <input type="number" id="marginTop" min="5" max="60" step="1" value="18" />
+          </label>
+          <label>Bottom margin (mm)
+            <input type="number" id="marginBottom" min="5" max="60" step="1" value="18" />
+          </label>
+          <label>Left margin (mm)
+            <input type="number" id="marginLeft" min="5" max="60" step="1" value="22" />
+          </label>
+          <label>Right margin (mm)
+            <input type="number" id="marginRight" min="5" max="60" step="1" value="15" />
+          </label>
+          <label>Picture width <output id="imageWidthVal"></output>
+            <input type="range" id="imageWidth" min="20" max="100" step="5" value="70" data-unit="%" />
+          </label>
+          <label class="check">
+            <input type="checkbox" id="pageNumbers" /> Show page numbers
+          </label>
+        </div>
+      </fieldset>
+
+      <button type="button" id="resetBtn" class="link-btn">Reset spacing &amp; layout to defaults</button>
+    </details>
+
+    <div class="row">
+      <button id="convertBtn" class="primary-btn">Convert to handwriting</button>
+      <p id="statusMsg" role="status"></p>
+    </div>
+  </section>
+
+  <!-- 3 ---------------------------------------------------------------- -->
+  <section id="resultSection" class="card hidden">
+    <h2><span class="step">3</span> Check, edit and save</h2>
+    <div class="result-grid">
+      <div class="preview-pane">
+        <div id="previewCarousel" class="preview-carousel"></div>
+        <p id="pageInfo" class="hint"></p>
+      </div>
+
+      <div class="editor-pane">
+        <h3>Edit the text</h3>
+        <p class="hint">Fix mistakes, move pictures, paste an image, or add headings. Press <em>Apply</em> to redraw the pages.
+          Changes to the options in step 2 are applied the same way.</p>
+        <div class="editor-toolbar">
+          <button type="button" id="headingBtn" title="Turn this line into a heading (or back)">Heading</button>
+          <button type="button" id="pageBreakBtn" title="Start a new page here">New page</button>
+        </div>
+        <textarea id="editor" spellcheck="true" aria-label="Document text"></textarea>
+
+        <div id="imagePanel" class="hidden">
+          <h3>Pictures found</h3>
+          <p class="hint">Click a picture to put it at the cursor. Paste an image into the editor to add your own. Delete its line to remove it.</p>
+          <div id="imageThumbs"></div>
+        </div>
+
+        <details class="help">
+          <summary>Editing cheat-sheet</summary>
+          <ul>
+            <li>A blank line starts a new paragraph.</li>
+            <li><code># Title</code> makes a heading.</li>
+            <li><code>[[IMG:img_1]]</code> places picture 1; <code>[[IMG:img_1|50]]</code> makes it 50% wide.</li>
+            <li>Pasted pictures use the same marker; edit the number after <code>|</code> to resize them.</li>
+            <li><code>[[PAGEBREAK]]</code> starts a new page.</li>
+          </ul>
+        </details>
+
+        <div class="row">
+          <button id="applyBtn" class="primary-btn">Apply changes</button>
+          <button id="shuffleBtn" type="button">New handwriting variation</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-actions">
+      <button id="copyBtn">Copy text</button>
+      <button id="downloadPdfBtn" class="solid">Download PDF</button>
+      <button id="downloadDocxBtn" class="solid">Download Word (.docx)</button>
+      <button id="shareBtn">Share</button>
+    </div>
+  </section>
+</main>
+
+<div id="toast" class="toast hidden" role="status"></div>
+
+<footer>
+  <p>Your files never leave this computer.</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
